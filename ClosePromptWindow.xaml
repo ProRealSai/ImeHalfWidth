@@ -1,0 +1,45 @@
+<Window x:Class="ImeHalfWidth.ClosePromptWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="关闭半角输入锁定"
+        Width="500" SizeToContent="Height"
+        WindowStartupLocation="CenterOwner"
+        ResizeMode="NoResize"
+        WindowStyle="None"
+        AllowsTransparency="True"
+        Background="Transparent"
+        ShowInTaskbar="False">
+  <Border Margin="12" Background="{StaticResource CardBrush}" CornerRadius="12"
+          BorderBrush="{StaticResource LineBrush}" BorderThickness="1">
+    <Border.Effect>
+      <DropShadowEffect BlurRadius="18" ShadowDepth="0" Opacity="0.22" Color="#0F6B6B"/>
+    </Border.Effect>
+    <DockPanel>
+      <Border DockPanel.Dock="Top" Background="{StaticResource HeaderBrush}" CornerRadius="12,12,0,0" Height="42">
+        <DockPanel Margin="16,0">
+          <Button DockPanel.Dock="Right" Width="28" Height="28" Click="OnCancel"
+                  Background="Transparent" BorderThickness="0" Cursor="Hand" ToolTip="关闭">
+            <TextBlock Text="✕" FontSize="14" Foreground="{StaticResource MutedBrush}" HorizontalAlignment="Center"/>
+          </Button>
+          <TextBlock Text="关闭半角输入锁定" VerticalAlignment="Center" FontSize="15"
+                     FontWeight="SemiBold" Foreground="{StaticResource TextBrush}"/>
+        </DockPanel>
+      </Border>
+
+      <Border Padding="22,18,22,22">
+        <StackPanel>
+          <TextBlock Text="请选择关闭方式：" FontSize="18" FontWeight="SemiBold"
+                     Foreground="{StaticResource TextBrush}" Margin="0,0,0,14"/>
+          <Button Style="{StaticResource DialogButton}" Click="OnTray"
+                  Content="最小化到托盘（继续在后台锁定）"/>
+          <Button Style="{StaticResource DangerButton}" Click="OnExit"
+                  Content="退出程序（停止锁定并结束进程）"/>
+          <Button Style="{StaticResource GhostButton}" Click="OnCancel" Content="取消"/>
+          <TextBlock Text="隐藏主窗口后可在系统托盘继续运行，右键托盘可改锁定选项。"
+                     Foreground="{StaticResource MutedBrush}" FontSize="12"
+                     TextWrapping="Wrap" HorizontalAlignment="Center" Margin="0,12,0,0"/>
+        </StackPanel>
+      </Border>
+    </DockPanel>
+  </Border>
+</Window>
