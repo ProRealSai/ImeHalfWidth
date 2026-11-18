@@ -41,8 +41,8 @@
 ## 环境
 
 - Windows 10 / 11（x64）
-- 开发：.NET 10 SDK、Visual Studio 2022/2026（打开 `ImeHalfWidth.sln`）
-- 运行：可用仓库中自包含发布包，或本机安装 .NET 10 桌面运行时
+- 运行：使用系统自带的 .NET Framework 4.8，无需安装 .NET 10
+- 开发：Visual Studio 2022/2026，或已安装 .NET Framework 4.8 面向包的 SDK（打开 `ImeHalfWidth.sln`）
 
 ## 使用
 
@@ -63,13 +63,10 @@
 
 ```powershell
 dotnet build ImeHalfWidth.sln -c Release
+dotnet publish ImeHalfWidth.csproj -c Release -o .\publish
 ```
 
-生成单文件（需本机已安装 SDK）：
-
-```powershell
-dotnet publish ImeHalfWidth.csproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -o .\publish
-```
+生成结果是单个小体积 `ImeHalfWidth.exe`（依赖系统自带的 .NET Framework 4.8）。
 
 ## 原理说明
 

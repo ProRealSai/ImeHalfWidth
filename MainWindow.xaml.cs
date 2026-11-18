@@ -233,7 +233,7 @@ public partial class MainWindow : Window
         StatusPunctText.Foreground = accent;
         StatusTimeText.Text = status.UpdatedAt.ToString("HH:mm:ss");
         _statusMenu.Text = line;
-        _tray.Text = line.Length <= 63 ? line : line[..63];
+        _tray.Text = line.Length <= 63 ? line : line.Substring(0, 63);
     }
 
     private void OnClosing(object sender, System.ComponentModel.CancelEventArgs e)

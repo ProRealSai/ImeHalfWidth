@@ -1,7 +1,8 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
-    <TargetFramework>net10.0-windows</TargetFramework>
+    <TargetFramework>net48</TargetFramework>
+    <LangVersion>latest</LangVersion>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <UseWPF>true</UseWPF>
@@ -13,6 +14,15 @@
     <Product>半角输入锁定</Product>
     <Description>Keep Microsoft IME in half-width with English punctuation</Description>
     <Version>2.0.0</Version>
+    <Prefer32Bit>false</Prefer32Bit>
+    <GenerateSupportedRuntime>false</GenerateSupportedRuntime>
+  </PropertyGroup>
+  <Target Name="RemoveAppConfig" AfterTargets="CopyFilesToOutputDirectory;Publish">
+    <Delete Files="$(TargetPath).config;$(PublishDir)$(TargetFileName).config" TreatErrorsAsWarnings="true" />
+  </Target>
+  <PropertyGroup Condition="'$(Configuration)' == 'Release'">
+    <DebugType>none</DebugType>
+    <DebugSymbols>false</DebugSymbols>
   </PropertyGroup>
   <ItemGroup>
     <Resource Include="Assets\App.ico" />

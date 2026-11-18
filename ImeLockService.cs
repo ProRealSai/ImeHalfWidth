@@ -82,7 +82,7 @@ internal sealed class ImeLockService
         if (key is null)
             return;
 
-        var exe = Environment.ProcessPath;
+        var exe = System.Reflection.Assembly.GetExecutingAssembly().Location;
         if (enabled && !string.IsNullOrEmpty(exe))
             key.SetValue(RunName, $"\"{exe}\"");
         else
@@ -111,8 +111,18 @@ internal sealed class ImeLockService
     private static extern bool ImmSetConversionStatus(IntPtr hImc, uint conversion, uint sentence);
 }
 
-internal readonly record struct ImeStatus(
-    bool Enabled,
-    bool HalfWidth,
-    bool EnglishPunctuation,
-    DateTime UpdatedAt);
+internal readonly struct ImeStatus
+{
+    public ImeStatus(bool enabled, bool halfWidth, bool englishPunctuation, DateTime updatedAt)
+    {
+        Enabled = enabled;
+        HalfWidth = halfWidth;
+        EnglishPunctuation = englishPunctuation;
+        UpdatedAt = updatedAt;
+    }
+
+    public bool Enabled { get; }
+    public bool HalfWidth { get; }
+    public bool EnglishPunctuation { get; }
+    public DateTime UpdatedAt { get; }
+}
