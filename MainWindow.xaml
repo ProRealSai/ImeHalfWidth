@@ -9,7 +9,7 @@
         Icon="pack://application:,,,/Assets/App.ico"
         Closing="OnClosing">
   <DockPanel>
-    <StatusBar DockPanel.Dock="Bottom" Background="{StaticResource HeaderBrush}"
+    <StatusBar DockPanel.Dock="Bottom" Background="{StaticResource BgBrush}"
                BorderBrush="{StaticResource LineBrush}" BorderThickness="0,1,0,0">
       <StatusBarItem>
         <TextBlock x:Name="StatusRunText" Text="就绪" Foreground="{StaticResource MutedBrush}"/>

@@ -1,3 +1,4 @@
+using System.Reflection;
 using System.Runtime.InteropServices;
 using Microsoft.Win32;
 
@@ -14,60 +15,45 @@ internal sealed class ImeLockService
     private const string RunKey = @"Software\Microsoft\Windows\CurrentVersion\Run";
     private const string RunName = "ImeHalfWidth";
 
-    public ImeStatus Apply(AppSettings settings)
+    public void Apply(AppSettings settings)
     {
+        if (!settings.Enabled)
+            return;
+
         var hwnd = GetForegroundWindow();
         var imeWnd = hwnd == IntPtr.Zero ? IntPtr.Zero : ImmGetDefaultIMEWnd(hwnd);
         if (imeWnd == IntPtr.Zero)
             imeWnd = hwnd;
 
-        var current = imeWnd == IntPtr.Zero
-            ? 0
-            : unchecked((int)SendMessage(imeWnd, WmImeControl, (IntPtr)ImcGetConversionMode, IntPtr.Zero));
-        if (current < 0)
-            current = 0;
-
-        var desired = current;
-        if (settings.Enabled)
+        if (imeWnd != IntPtr.Zero)
         {
-            desired = settings.HalfWidth
-                ? desired & ~ImeCmodeFullShape
-                : desired | ImeCmodeFullShape;
-            desired = settings.EnglishPunctuation
-                ? desired & ~ImeCmodeSymbol
-                : desired | ImeCmodeSymbol;
-
-            if (desired != current && imeWnd != IntPtr.Zero)
+            var current = unchecked((int)SendMessage(imeWnd, WmImeControl, (IntPtr)ImcGetConversionMode, IntPtr.Zero));
+            if (current < 0)
+                current = 0;
+            var desired = WithLockFlags(current, settings);
+            if (desired != current)
                 SendMessage(imeWnd, WmImeControl, (IntPtr)ImcSetConversionMode, (IntPtr)desired);
-
-            if (hwnd != IntPtr.Zero)
-            {
-                var himc = ImmGetContext(hwnd);
-                if (himc != IntPtr.Zero)
-                {
-                    if (ImmGetConversionStatus(himc, out var conv, out var sentence))
-                    {
-                        var next = conv;
-                        next = settings.HalfWidth
-                            ? next & ~(uint)ImeCmodeFullShape
-                            : next | (uint)ImeCmodeFullShape;
-                        next = settings.EnglishPunctuation
-                            ? next & ~(uint)ImeCmodeSymbol
-                            : next | (uint)ImeCmodeSymbol;
-                        if (next != conv)
-                            ImmSetConversionStatus(himc, next, sentence);
-                    }
-
-                    ImmReleaseContext(hwnd, himc);
-                }
-            }
         }
 
-        return new ImeStatus(
-            settings.Enabled,
-            (desired & ImeCmodeFullShape) == 0,
-            (desired & ImeCmodeSymbol) == 0,
-            DateTime.Now);
+        if (hwnd == IntPtr.Zero)
+            return;
+
+        var himc = ImmGetContext(hwnd);
+        if (himc == IntPtr.Zero)
+            return;
+
+        try
+        {
+            if (!ImmGetConversionStatus(himc, out var conv, out var sentence))
+                return;
+            var next = (uint)WithLockFlags(unchecked((int)conv), settings);
+            if (next != conv)
+                ImmSetConversionStatus(himc, next, sentence);
+        }
+        finally
+        {
+            ImmReleaseContext(hwnd, himc);
+        }
     }
 
     public static bool IsAutoStartEnabled()
@@ -82,11 +68,21 @@ internal sealed class ImeLockService
         if (key is null)
             return;
 
-        var exe = System.Reflection.Assembly.GetExecutingAssembly().Location;
+        var exe = Assembly.GetExecutingAssembly().Location;
         if (enabled && !string.IsNullOrEmpty(exe))
             key.SetValue(RunName, $"\"{exe}\"");
         else
             key.DeleteValue(RunName, false);
+    }
+
+    private static int WithLockFlags(int mode, AppSettings settings)
+    {
+        mode = settings.HalfWidth
+            ? mode & ~ImeCmodeFullShape
+            : mode | ImeCmodeFullShape;
+        return settings.EnglishPunctuation
+            ? mode & ~ImeCmodeSymbol
+            : mode | ImeCmodeSymbol;
     }
 
     [DllImport("user32.dll")]
@@ -109,20 +105,4 @@ internal sealed class ImeLockService
 
     [DllImport("imm32.dll")]
     private static extern bool ImmSetConversionStatus(IntPtr hImc, uint conversion, uint sentence);
-}
-
-internal readonly struct ImeStatus
-{
-    public ImeStatus(bool enabled, bool halfWidth, bool englishPunctuation, DateTime updatedAt)
-    {
-        Enabled = enabled;
-        HalfWidth = halfWidth;
-        EnglishPunctuation = englishPunctuation;
-        UpdatedAt = updatedAt;
-    }
-
-    public bool Enabled { get; }
-    public bool HalfWidth { get; }
-    public bool EnglishPunctuation { get; }
-    public DateTime UpdatedAt { get; }
 }

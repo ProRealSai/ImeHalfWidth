@@ -1,7 +1,6 @@
 using System.Drawing;
 using System.Windows;
 using System.Windows.Threading;
-using Drawing = System.Drawing;
 using Forms = System.Windows.Forms;
 using MediaBrush = System.Windows.Media.Brush;
 
@@ -32,17 +31,18 @@ public partial class MainWindow : Window
         _statusMenu = new Forms.ToolStripMenuItem
         {
             Enabled = false,
-            Font = new Drawing.Font("Microsoft YaHei UI", 10f, Drawing.FontStyle.Bold)
+            Font = new Font("Microsoft YaHei UI", 10f, System.Drawing.FontStyle.Bold)
         };
-        _enableMenu = CheckItem("启用锁定", (_, _) => ApplyFromTray(announce: true));
+        _enableMenu = CheckItem("启用锁定", (_, _) => ApplyFromTray());
         _halfWidthMenu = ActionItem("半角", (_, _) => SetWidth(true));
         _fullWidthMenu = ActionItem("全角", (_, _) => SetWidth(false));
         _englishPunctMenu = ActionItem("英文标点", (_, _) => SetPunct(true));
         _chinesePunctMenu = ActionItem("中文标点", (_, _) => SetPunct(false));
-        _autoStartMenu = CheckItem("开机启动", (_, _) =>
+        _autoStartMenu = CheckItem("开机启动", (sender, _) =>
         {
-            ImeLockService.SetAutoStart(_autoStartMenu.Checked);
-            AutoStartBox.IsChecked = _autoStartMenu.Checked;
+            var on = ((Forms.ToolStripMenuItem)sender).Checked;
+            ImeLockService.SetAutoStart(on);
+            AutoStartBox.IsChecked = on;
         });
 
         _tray = CreateTray();
@@ -114,10 +114,10 @@ public partial class MainWindow : Window
         return item;
     }
 
-    private static Drawing.Icon LoadTrayIcon()
+    private static Icon LoadTrayIcon()
     {
         var stream = System.Windows.Application.GetResourceStream(new Uri("pack://application:,,,/Assets/App.ico"))?.Stream;
-        return stream is not null ? new Drawing.Icon(stream) : SystemIcons.Application;
+        return stream is not null ? new Icon(stream) : SystemIcons.Application;
     }
 
     private void OnSettingChanged(object sender, RoutedEventArgs e)
@@ -125,7 +125,6 @@ public partial class MainWindow : Window
         if (!_ready || _syncing)
             return;
         SaveFromUi();
-        SyncTrayFromSettings();
         RefreshStatus();
     }
 
@@ -140,24 +139,23 @@ public partial class MainWindow : Window
     private void SetWidth(bool halfWidth)
     {
         _settings.HalfWidth = halfWidth;
-        _settings.Save();
-        ApplySettingsToUi();
-        RefreshStatus();
-        Announce();
+        CommitSettings(announce: true);
     }
 
     private void SetPunct(bool english)
     {
         _settings.EnglishPunctuation = english;
-        _settings.Save();
-        ApplySettingsToUi();
-        RefreshStatus();
-        Announce();
+        CommitSettings(announce: true);
     }
 
-    private void ApplyFromTray(bool announce)
+    private void ApplyFromTray()
     {
         _settings.Enabled = _enableMenu.Checked;
+        CommitSettings(announce: true);
+    }
+
+    private void CommitSettings(bool announce)
+    {
         _settings.Save();
         ApplySettingsToUi();
         RefreshStatus();
@@ -216,10 +214,7 @@ public partial class MainWindow : Window
         if (!_ready)
             return;
 
-        if (!_syncing)
-            SaveFromUi();
-
-        var status = _ime.Apply(_settings);
+        _ime.Apply(_settings);
         var ok = (MediaBrush)FindResource("OkBrush");
         var muted = (MediaBrush)FindResource("MutedBrush");
         var accent = (MediaBrush)FindResource("AccentBrush");
@@ -231,7 +226,7 @@ public partial class MainWindow : Window
         StatusWidthText.Foreground = accent;
         StatusPunctText.Text = "标点：" + (_settings.EnglishPunctuation ? "英文标点" : "中文标点");
         StatusPunctText.Foreground = accent;
-        StatusTimeText.Text = status.UpdatedAt.ToString("HH:mm:ss");
+        StatusTimeText.Text = DateTime.Now.ToString("HH:mm:ss");
         _statusMenu.Text = line;
         _tray.Text = line.Length <= 63 ? line : line.Substring(0, 63);
     }
@@ -242,16 +237,13 @@ public partial class MainWindow : Window
             return;
 
         e.Cancel = true;
-        var prompt = new ClosePromptWindow { Owner = this };
-        prompt.ShowDialog();
-        if (prompt.Choice == CloseChoice.Tray)
-            Hide();
-        else if (prompt.Choice == CloseChoice.Exit)
-            ExitFromTray();
+        Hide();
+        ShowInTaskbar = false;
     }
 
     private void RestoreFromTray()
     {
+        ShowInTaskbar = true;
         Show();
         WindowState = WindowState.Normal;
         Activate();

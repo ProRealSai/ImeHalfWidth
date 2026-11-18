@@ -8,4 +8,5 @@ obj/
 *.nupkg
 *.pfx
 publish/
+publish-*/
 *.log
